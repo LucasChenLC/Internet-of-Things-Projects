@@ -26,6 +26,7 @@ s = None
 
 
 def round_label(canvas, x, y, color, text, text_color, h=30, r=10, w=None, font_size=None, tag=None):
+    # 用于在特定画布上绘制圆角矩形并在上显示文本， x，y为绘制位置， color为绘制颜色，text为显示文本， text_color为为本颜色，w为宽度，h为高度，tag为附加标签
     if w is None:
         w = len(text) * 8
     if font_size is not None:
@@ -47,7 +48,7 @@ def round_label(canvas, x, y, color, text, text_color, h=30, r=10, w=None, font_
         canvas.create_text(x + w / 2, y + h / 2, text=text, fill=text_color, font=('Arial', font_size), tags=tag)
 
 
-class MainUI:
+class MainUI:   # 主界面UI类
 
     def __init__(self):
         global ori_board, mode
@@ -97,7 +98,7 @@ class MainUI:
             self.win.destroy()
 
 
-class UserName:
+class UserName:     # 在联网时输入用户名类定义
 
     def __init__(self):
         global ori_board
@@ -127,10 +128,10 @@ class WaitingRoom:
 
     def __init__(self):
         self.s = socket.socket()
-        self.s.connect(('10.26.49.167', 12345))
-        self.s.send(bytes(self_user_name, 'utf-8'))
+        self.s.connect((socket.gethostname(), 12345))   # 和服务器建立阻塞性连接，在生产中需要将gethostname()替换为服务器的IP地址
+        self.s.send(bytes(self_user_name, 'utf-8'))     # 将user_name发送给服务器
         self.previous_info = None
-        self.win = tk.Tk()
+        self.win = tk.Tk()  # 初始化UI
         self.a = tk.Label(self.win)
         t = Thread(target=self.refresh)
         t.start()
@@ -139,13 +140,13 @@ class WaitingRoom:
     def del_win(self):
         self.win.destroy()
 
-    def refresh(self):
+    def refresh(self):  # 刷新等候室列表
         global s
         while self.win.children:
-            info = self.s.recv(1024)
-            info = info.decode('utf-8')
+            info = self.s.recv(1024)    # 接收服务器信息
+            info = info.decode('utf-8')     # 解码
             try:
-                user_dic = json.loads(info)
+                user_dic = json.loads(info)     # 如果是json文件格式， 则显示在线用户列表和他们的状态
                 if user_dic != self.previous_info:
                     columns = ("User Name", "Available")
                     try:
@@ -170,35 +171,32 @@ class WaitingRoom:
                     for i in range(min(len(user_list), len(available_list))):  # 写入数据
                         self.treeview.insert('', i, values=(user_list[i], available_list[i]))
 
-                    self.treeview.bind('<Double-1>', self.set_cell_value)  # 双击左键进入编辑
+                    self.treeview.bind('<Double-1>', self.set_cell_value)  # 引发对战请求
             except json.decoder.JSONDecodeError:
-                print(info)
-                info = info.split('.')
-                if info[0] == 'request':
+                info = info.split('.')  # 将信息拆分
+                if info[0] == 'request':    # 如果回复信息类型是请求
                     answer = messagebox.askyesno('combat request',
                                                  'Do you want to join the game with ' + info[1] + ' ?')
                     if answer:
                         self.s.send(bytes('answer.accept', 'utf-8'))
                         self.win.quit()
-                        print(info)
                         s = self.s
                         return
                     else:
                         self.s.send(bytes('answer.deny', 'utf-8'))
-                elif info[0] == 'answer':
-                    if info[1] == 'accept':
+                elif info[0] == 'answer':   # 如果回复信息类型是回复
+                    if info[1] == 'accept': # 请求被接受
                         for wdiget in self.win.winfo_children():
                             wdiget.destroy()
                         self.win.quit()
-                        print(info)
                         s = self.s
                         return
-                    else:
+                    else:   # 请求被拒绝
                         messagebox.showinfo('Request Denied', 'Your request has been denied')
 
             self.previous_info = user_dic
 
-    def set_cell_value(self, event):  # 双击进入编辑状态
+    def set_cell_value(self, event):  # 对战请求
         for item in self.treeview.selection():
             item_text = self.treeview.item(item, "values")
             info = tuple(item_text)
@@ -291,7 +289,7 @@ class RoundSettings:
         self.win.destroy()
 
 
-class Display:
+class Display:  # 棋盘显示程序
 
     def __init__(self, board=None, pipe=None, mode=None):
         global ori_board
@@ -318,11 +316,12 @@ class Display:
         self.x = None
         self.y = None
         self.p = None
+        self.history = []
         self.mode = mode
         self.display_posi = []
         self.my_turn_flag = None
         for i in range(15):
-            line_display_posi = []
+            line_display_posi = []  # 初始化 显示位置矩阵
             for j in range(15):
                 x = 39.2 * j + 25
                 y = 39.2 * i + 25
@@ -392,16 +391,16 @@ class Display:
             print('return', info)
             return info
 
-    def display_chess(self, game_board):
+    def display_chess(self, game_board):    # 显示棋子函数
         self.display_canvas.delete("chess")
-        for i in range(15):
+        for i in range(15):  # 遍历棋盘
             for j in range(15):
-                if game_board.board[i][j] == WHITE_CHESS:
+                if game_board.board[i][j] == WHITE_CHESS:   # 如果是白棋，则跟觉显示矩阵和半径，绘制白棋
                     self.display_canvas.create_oval(self.display_posi[i][j].x - self.r,
                                                     self.display_posi[i][j].y - self.r,
                                                     self.display_posi[i][j].x + self.r,
                                                     self.display_posi[i][j].y + self.r, fill='GhostWhite', tag='chess')
-                elif game_board.board[i][j] == BLACK_CHESS:
+                elif game_board.board[i][j] == BLACK_CHESS:  # 如果是黑棋，则跟觉显示矩阵和半径，绘制黑棋
                     self.display_canvas.create_oval(self.display_posi[i][j].x - self.r,
                                                     self.display_posi[i][j].y - self.r,
                                                     self.display_posi[i][j].x + self.r,
@@ -411,16 +410,15 @@ class Display:
             messagebox.showinfo('Game End', 'The Game is End!')
             self.win.quit()
 
-
-    def place_chess(self, event):
+    def place_chess(self, event):   # 点击，放置棋子
         if self.my_turn_flag or self.s is None:
-            for row_index in range(15):
+            for row_index in range(15):   # 遍历棋盘
                 for col_index in range(15):
                     if self.display_posi[row_index][col_index].x - self.r < event.x < self.display_posi[row_index][
                         col_index].x + self.r and self.display_posi[row_index][col_index].y - self.r < event.y < \
-                            self.display_posi[row_index][col_index].y + self.r:
-                        if self.game_board.board[row_index][col_index] == NO_CHESS:
-                            self.game_board.make_move([row_index, col_index], self.turn)
+                            self.display_posi[row_index][col_index].y + self.r:  # 如果鼠标的点击范围在棋子的附近内
+                        if self.game_board.board[row_index][col_index] == NO_CHESS:  # 如果当前位置棋盘为空，则可以放置棋子
+                            self.game_board.make_move([row_index, col_index], self.turn, self.history)
                             self.turn = -self.turn
                             self.display_chess(self.game_board)
                             if self.s is not None:
@@ -428,10 +426,10 @@ class Display:
                                 self.s.send(bytes('position.' + str(row_index) + ',' + str(col_index), 'utf-8'))
                                 self.change_turn()
                             if self.mode is not None:
-                                #ai = SearchEngine(self.game_board, self.turn)
+                                # ai = SearchEngine(self.game_board, self.turn)
                                 ai = AlphaBeta(self.game_board, self.turn)
                                 move = ai.search()
-                                self.game_board.make_move([move[0], move[1]], self.turn)
+                                self.game_board.make_move([move[0], move[1]], self.turn, self.history)
                                 self.turn = -self.turn
                                 self.display_chess(self.game_board)
                             return
@@ -444,16 +442,16 @@ class Display:
     def display(self):
         self.display_chess(self.game_board)
         self.board_frame.pack(side=tk.LEFT)
-        #self.control_panel.pack(side=tk.RIGHT)
+        # self.control_panel.pack(side=tk.RIGHT)
         self.display_canvas.pack()
         self.win.bind("<Button-1>", self.place_chess)
         self.win.bind("<Return>", self.retract)
         self.win.mainloop()
 
-    def retract(self, event):
+    def retract(self, event):   # 撤销棋子函数
         print('enr')
         if self.s is None:
-            move = self.game_board.history.pop()
+            move = self.history.pop()  # history 中储存了历史放置棋子队列，根据历史信息回退
             self.game_board.board[move[0]][move[1]] = NO_CHESS
             self.turn = -self.turn
             self.display_chess(self.game_board)
@@ -487,4 +485,3 @@ if __name__ == "__main__":
             v.win.destroy()
         else:
             break
-

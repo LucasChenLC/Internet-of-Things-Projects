@@ -28,7 +28,7 @@ class Server:
         s = socket.socket()  # 创建 socket 对象
         host = socket.gethostname()  # 获取本地主机名
         port = 12345  # 设置端口
-        s.bind(('10.26.49.167', port))  # 绑定端口
+        s.bind(('10.21.3.146', port))  # 绑定端口
 
         s.listen(16)  # 等待客户端连接
         while True:
