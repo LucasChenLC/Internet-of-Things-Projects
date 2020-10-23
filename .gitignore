@@ -1,3 +1,5 @@
 .DS_Store
 goBang/goBang/.idea
 goBang/goBang/__pycache__/
+goBang/goBangServer/.idea
+goBang/goBangServer/__pycache__/
