@@ -139,7 +139,7 @@ class AlphaBeta:
         while len(move_list):
             move = move_list.pop()
             self.game_board.make_move(move, self.side)
-            val = -self.alpha_beta(3 - 1, -beta, -alpha, -self.side)
+            val = -self.alpha_beta(2 - 1, -beta, -alpha, -self.side)
             self.game_board.board[move[0]][move[1]] = NO_CHESS
             if val > alpha:
                 alpha = val

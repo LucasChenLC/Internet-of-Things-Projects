@@ -55,7 +55,7 @@ class MainUI:   # 主界面UI类
         mode = None
         self.win = tk.Tk()
         self.canvas = tk.Canvas(self.win, width=1024, height=576)
-        ori_board = cv2.imread('resources/pictures/UIBegin.jpeg')
+        ori_board = cv2.imread('resources/pictures/pwl.jpeg')
         ori_board = ori_board[..., ::-1]
         ori_board = ImageTk.PhotoImage(Image.fromarray(ori_board))
         self.canvas.create_image(1024 / 2, 576 / 2, image=ori_board)
